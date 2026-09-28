@@ -1,0 +1,97 @@
+schema_version: 1
+
+project:
+  id: sample
+  name: Sample Application
+  description: Safe illustrative project configuration for WARD
+
+environments:
+  development:
+    kind: development
+    api:
+      base_url: https://example.invalid
+      auth:
+        bearer_token_env: SAMPLE_API_TOKEN
+    services:
+      - name: Core API
+        type: http
+        url: /health
+        use_auth: false
+      - name: Local TCP service
+        type: tcp
+        host_env: SAMPLE_TCP_HOST
+        port: 9000
+    database:
+      driver: mysql
+      host_env: SAMPLE_DB_HOST
+      port: 3306
+      database_env: SAMPLE_DB_NAME
+      username_env: SAMPLE_DB_USER
+      password_env: SAMPLE_DB_PASSWORD
+      tls: true
+    queries:
+      user_by_id:
+        description: Find a user by ID
+        parameters:
+          - name: user_id
+            type: int
+        sql: |
+          SELECT id, email, status, created_at
+          FROM users
+          WHERE id = ?
+    logs:
+      sources:
+        - id: application
+          name: Sample Application Log
+          type: file
+          format: text
+          paths:
+            - sample-logs/*.log
+    diagnostics:
+      user:
+        description: Check service health and recent user errors
+        parameters:
+          - name: user_id
+            type: int
+        steps:
+          - id: health
+            type: health
+            service: Core API
+            continue_on_error: true
+          - id: errors
+            type: logs
+            source: application
+            filters:
+              last: 30m
+              user: ${user_id}
+              level: ERROR
+        assertions:
+          - step: errors
+            selector: count
+            operator: gt
+            value: 0
+            severity: warning
+            issue: Recent errors were found for user ${user_id}.
+            evidence: Review the matching application log entries.
+            recommendation: Verify credentials and the affected service before escalation.
+    redaction:
+      fields:
+        - session_id
+      patterns:
+        - '(?i)session_id=[^\s]+'
+
+  production:
+    kind: production
+    api:
+      base_url: https://example.invalid
+    services:
+      - name: Core API
+        type: http
+        url: /health
+    database:
+      driver: mysql
+      host_env: SAMPLE_PROD_DB_HOST
+      database_env: SAMPLE_PROD_DB_NAME
+      username_env: SAMPLE_PROD_DB_USER
+      password_env: SAMPLE_PROD_DB_PASSWORD
+      tls: true

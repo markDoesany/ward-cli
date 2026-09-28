@@ -1,0 +1,26 @@
+schema_version: 1
+
+project:
+  id: stayio
+  name: Stayio API
+  description: Local Stayio API development profile
+
+environments:
+  development:
+    kind: development
+    api:
+      base_url: http://localhost:8080
+    services:
+      - name: Stayio session endpoint
+        type: http
+        url: /auth/session
+        expected_status: 401
+    redaction:
+      fields:
+        - token
+        - password
+        - secret
+        - cookie
+        - session_id
+      patterns:
+        - '(?i)session_id=[^\s]+'

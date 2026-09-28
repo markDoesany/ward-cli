@@ -1,0 +1,3 @@
+INFO request received user=10291 reference=TXN12345
+ERROR authentication failed user=10291 session_id=sample-secret
+INFO request completed user=10291 reference=TXN12345

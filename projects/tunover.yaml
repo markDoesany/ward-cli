@@ -1,0 +1,66 @@
+schema_version: 1
+
+project:
+  id: tunover
+  name: UTurn Handover Workspace
+  description: Local TUNOVER project workspace from the reference repository
+
+environments:
+  development:
+    kind: development
+    api:
+      base_url: http://localhost:3000
+    services:
+      - name: TUNOVER Web
+        type: http
+        url: /
+        expected_status: 200
+      - name: TUNOVER Protected Profile
+        type: http
+        url: /api/profile
+        expected_status: 401
+    logs:
+      sources:
+        - id: tunover-web
+          name: TUNOVER development output
+          type: file
+          format: text
+          paths:
+            - ../../TUNOVER/logs/*.log
+    diagnostics:
+      observer:
+        description: Check TUNOVER availability, protected access, and recent web errors
+        steps:
+          - id: web
+            type: health
+            service: TUNOVER Web
+            continue_on_error: true
+          - id: protected_profile
+            type: health
+            service: TUNOVER Protected Profile
+            continue_on_error: true
+          - id: recent_errors
+            type: logs
+            source: tunover-web
+            filters:
+              last: 30m
+              level: ERROR
+            continue_on_error: true
+        assertions:
+          - step: recent_errors
+            selector: count
+            operator: gt
+            value: 0
+            severity: warning
+            issue: Recent TUNOVER web errors were detected.
+            evidence: Review the matching TUNOVER development log entries.
+            recommendation: Correlate the errors with the protected route and recent deployment activity.
+    redaction:
+      fields:
+        - token
+        - password
+        - secret
+        - cookie
+        - session_id
+      patterns:
+        - '(?i)session_id=[^\s]+'
