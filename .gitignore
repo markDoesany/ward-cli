@@ -1,0 +1,9 @@
+bin/
+dist/
+.DS_Store
+*.exe
+ward
+ward-*
+coverage.out
+coverage.html
+.ward/
